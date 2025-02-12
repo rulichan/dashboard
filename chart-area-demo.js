@@ -20,18 +20,54 @@ document.addEventListener("DOMContentLoaded", function () {
             const ctx = canvas.getContext("2d");
             charts[chartId] = new Chart(ctx, {
                 type: "line",
-                data: { labels: [], datasets: [{
-                    label: chartConfigs[chartId].label,
-                    data: [],
-                    fill: true,
-                    borderColor: chartConfigs[chartId].color,
-                    backgroundColor: chartConfigs[chartId].color.replace("rgb", "rgba").replace(")", ", 0.2)"),
-                    tension: 0.4
-                }]},
+                data: { 
+                    labels: [], 
+                    datasets: [{
+                        label: chartConfigs[chartId].label,
+                        data: [],
+                        fill: true,
+                        borderColor: chartConfigs[chartId].color,
+                        backgroundColor: chartConfigs[chartId].color.replace("rgb", "rgba").replace(")", ", 0.2)"),
+                        tension: 0.4
+                    }]
+                },
                 options: {
                     scales: {
-                        x: { type: "time", time: { unit: "second", tooltipFormat: "HH:mm:ss" } },
-                        y: { beginAtZero: true }
+                        xAxes: [{  // Note the array syntax for v2.9.4
+                            type: 'time',
+                            time: {
+                                unit: 'second',
+                                displayFormats: {
+                                    second: 'HH:mm:ss'
+                                },
+                                stepSize: 5  // Show label every 10 seconds
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: true,
+                                maxTicksLimit: 8,
+                                source: 'auto'
+                            },
+                            gridLines: {
+                                display: true
+                            }
+                        }],
+                        yAxes: [{  // Note the array syntax for v2.9.4
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    },
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 30,
+                            top: 10,
+                            bottom: 20
+                        }
                     }
                 }
             });
@@ -66,19 +102,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-document.getElementById("timeScale").addEventListener("change", function() {
-    const selectedScale = this.value;
-    fetch(`/api/data?timeScale=${selectedScale}`)
-        .then(response => {
-            if (!response.ok) throw new Error("Network response was not ok");
-            return response.json();
-        })
-        .then(data => {
-            updateChartData(data);
-        })
-        .catch(error => console.error("API Fetch Error:", error));
-});
-
 function updateChartData(data) {
     Object.keys(charts).forEach(chartId => {
         const chart = charts[chartId];
@@ -87,11 +110,3 @@ function updateChartData(data) {
         chart.update();
     });
 }
-
-// Fetch default data on page load
-fetch(`/api/data?timeScale=realtime`)
-    .then(response => response.json())
-    .then(data => {
-        updateChartData(data);
-    })
-    .catch(error => console.error("Initial Data Fetch Error:", error));
